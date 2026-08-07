@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Математический тренажёр</title>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Trebuchet MS',Verdana,sans-serif;background:#eef1f5;}
+  .screen{display:none;min-height:100vh;}
+  .screen.active{display:block;}
+
+  /* ---------- HOME ---------- */
+  #screen-home{
+    background:linear-gradient(180deg,#fff8ec 0%,#f3e8d0 100%);
+    padding:24px 16px 60px;
+  }
+  #screen-home .wrap{max-width:640px;margin:0 auto;}
+  #screen-home h1{text-align:center;font-size:1.8rem;margin:6px 0 2px;color:#3d405b;}
+  #screen-home .subtitle{text-align:center;color:#7a7f9e;margin-bottom:20px;font-size:.95rem;}
+  .diary-card{
+    background:#fff;border-radius:20px;padding:20px 22px;margin-bottom:20px;
+    box-shadow:0 4px 0 rgba(0,0,0,.06);
+  }
+  .diary-top{display:flex;align-items:center;gap:14px;margin-bottom:10px;}
+  .diary-emoji{font-size:2.4rem;}
+  .diary-rank{font-weight:bold;font-size:1.2rem;color:#3d405b;}
+  .diary-points{color:#7a7f9e;font-size:.9rem;}
+  .rank-bar{height:12px;background:#eee;border-radius:8px;overflow:hidden;margin-top:6px;}
+  .rank-bar-fill{height:100%;background:linear-gradient(90deg,#f2c14e,#e9b44c);width:0%;transition:width .5s;}
+  .rank-next{font-size:.78rem;color:#a0a5c2;margin-top:6px;text-align:right;}
+
+  .app-card{
+    display:flex;align-items:center;gap:16px;background:#fff;border-radius:18px;
+    padding:16px 18px;margin-bottom:14px;box-shadow:0 3px 0 rgba(0,0,0,.06);
+    cursor:pointer;border:3px solid transparent;transition:transform .12s;
+  }
+  .app-card:active{transform:scale(.98);}
+  .app-card .icon{font-size:2.2rem;width:52px;text-align:center;flex-shrink:0;}
+  .app-card .info{flex:1;}
+  .app-card .title{font-weight:bold;font-size:1.05rem;color:#3d405b;}
+  .app-card .desc{font-size:.82rem;color:#7a7f9e;margin-top:2px;}
+  .app-card .pts{font-size:.9rem;font-weight:bold;white-space:nowrap;}
+  .app-card.a1{border-color:#f2c14e33;}
+  .app-card.a2{border-color:#7ef9d033;}
+  .app-card.a3{border-color:#f2836b33;}
+  .app-card.a1 .pts{color:#d99e1f;}
+  .app-card.a2 .pts{color:#2fae8c;}
+  .app-card.a3 .pts{color:#e0654a;}
+
+  .reset-link{
+    display:block;text-align:center;margin-top:18px;font-size:.8rem;color:#b3b7d1;
+    text-decoration:underline;cursor:pointer;background:none;border:none;
+  }
+
+  /* shared nav-home button used inside sub-apps */
+  .home-btn{
+    background:rgba(255,255,255,.85);border:none;border-radius:10px;
+    padding:8px 14px;font-size:.85rem;cursor:pointer;color:#3d405b;font-weight:bold;
+  }
+  .points-toast{
+    text-align:center;font-family:'Trebuchet MS',sans-serif;font-weight:bold;
+    color:#d99e1f;font-size:1.05rem;margin-top:6px;
+  }
+
+  /* ================= APP 1 (ladder) ================= */
+  #screen-app1{
+    background:linear-gradient(180deg,#8ec9f0 0%, #e8f6ff 55%);
+    color:#264653;padding:16px 14px 60px;
+  }
+  #screen-app1 .topbar{display:flex;justify-content:space-between;align-items:center;max-width:640px;margin:0 auto 10px;}
+  #screen-app1 h1{text-align:center;font-size:1.5rem;margin:4px 0 2px;}
+  #screen-app1 .subtitle{text-align:center;color:#4a6572;margin-bottom:18px;font-size:.9rem;}
+  #screen-app1 .wrap{max-width:640px;margin:0 auto;}
+  #screen-app1 .ladder{display:flex;flex-direction:column-reverse;gap:10px;margin-bottom:22px;}
+  #screen-app1 .rung{
+    display:flex;align-items:center;gap:14px;background:#fff;border-radius:16px;
+    padding:12px 16px;box-shadow:0 3px 0 rgba(0,0,0,.08);cursor:pointer;
+    border:3px solid transparent;transition:transform .15s;
+  }
+  #screen-app1 .rung:active{transform:scale(.98);}
+  #screen-app1 .rung.locked{opacity:.55;cursor:not-allowed;}
+  #screen-app1 .rung .num{
+    width:36px;height:36px;border-radius:50%;background:#f2c14e;color:#5a3c00;
+    display:flex;align-items:center;justify-content:center;font-weight:bold;flex-shrink:0;
+  }
+  #screen-app1 .rung.locked .num{background:#c9d4da;color:#fff;}
+  #screen-app1 .rung .info{flex:1;}
+  #screen-app1 .rung .title{font-weight:bold;font-size:1rem;}
+  #screen-app1 .rung .desc{font-size:.8rem;color:#5a7481;}
+  #screen-app1 .rung .stars{font-size:.95rem;white-space:nowrap;}
+  #screen-app1 .quiz{background:#fff;border-radius:20px;padding:26px 20px;box-shadow:0 4px 0 rgba(0,0,0,.08);display:none;}
+  #screen-app1 .quiz.active{display:block;}
+  #screen-app1 .quiz-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  #screen-app1 .back-btn{background:none;border:none;color:#4a6572;font-size:.9rem;cursor:pointer;}
+  #screen-app1 .progress-dots{display:flex;gap:6px;}
+  #screen-app1 .dot{width:10px;height:10px;border-radius:50%;background:#dfe7ea;}
+  #screen-app1 .dot.done-ok{background:#3bb273;}
+  #screen-app1 .dot.done-bad{background:#e85d5d;}
+  #screen-app1 .question{font-size:2rem;text-align:center;margin:24px 0 20px;font-weight:bold;}
+  #screen-app1 .answer-row{display:flex;justify-content:center;gap:10px;margin-bottom:14px;}
+  #screen-app1 input[type=text]{width:120px;font-size:1.6rem;text-align:center;padding:10px;border-radius:12px;border:2px solid #cfd9de;outline:none;}
+  #screen-app1 input[type=text]:focus{border-color:#d99e1f;}
+  #screen-app1 button.submit{background:#d99e1f;color:#fff;border:none;border-radius:12px;padding:10px 22px;font-size:1.05rem;cursor:pointer;box-shadow:0 3px 0 #a97a13;}
+  #screen-app1 button.submit:active{transform:translateY(2px);box-shadow:none;}
+  #screen-app1 .feedback{text-align:center;font-size:1.1rem;min-height:1.6rem;font-weight:bold;}
+  #screen-app1 .feedback.ok{color:#3bb273;}
+  #screen-app1 .feedback.bad{color:#e85d5d;}
+  #screen-app1 .result{display:none;text-align:center;}
+  #screen-app1 .result.active{display:block;}
+  #screen-app1 .result .big{font-size:2.2rem;margin:8px 0;}
+  #screen-app1 .next-btn{margin-top:8px;background:#3bb273;color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:1rem;cursor:pointer;box-shadow:0 3px 0 #278754;}
+  #screen-app1 .retry-btn{margin-top:8px;margin-left:8px;background:#eee;color:#264653;border:none;border-radius:12px;padding:12px 20px;font-size:1rem;cursor:pointer;}
+
+  /* ================= APP 2 (space game) ================= */
+  #screen-app2{
+    background:radial-gradient(ellipse at top,#1a1550,#0b0f2e 70%);
+    color:#fff;padding:16px 14px 60px;position:relative;
+  }
+  #screen-app2 .stars-bg{
+    position:absolute;inset:0;z-index:0;
+    background-image:
+      radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+      radial-gradient(2px 2px at 70% 60%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 40% 80%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 85% 20%, #fff, transparent),
+      radial-gradient(1.5px 1.5px at 55% 45%, #fff, transparent);
+    opacity:.5;
+  }
+  #screen-app2 .wrap{max-width:600px;margin:0 auto;position:relative;z-index:1;}
+  #screen-app2 .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  #screen-app2 h1{text-align:center;font-size:1.5rem;margin:4px 0 2px;color:#7ef9d0;text-shadow:0 0 10px rgba(126,249,208,.6);}
+  #screen-app2 .subtitle{text-align:center;color:#b7bde0;margin-bottom:16px;font-size:.88rem;}
+  #screen-app2 .hud{display:flex;justify-content:space-between;align-items:center;background:#161b45;border-radius:16px;padding:12px 16px;margin-bottom:16px;box-shadow:0 0 0 1px rgba(126,249,208,.15) inset;}
+  #screen-app2 .hud .item{text-align:center;}
+  #screen-app2 .hud .val{font-size:1.25rem;font-weight:bold;color:#ffd166;}
+  #screen-app2 .hud .lbl{font-size:.7rem;color:#9aa0cf;}
+  #screen-app2 .hearts{font-size:1.05rem;letter-spacing:2px;}
+  #screen-app2 .track{position:relative;height:14px;background:#0e1240;border-radius:8px;margin-bottom:20px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);}
+  #screen-app2 .track-fill{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:linear-gradient(90deg,#ff6fb0,#7ef9d0);width:0%;transition:width .4s;}
+  #screen-app2 .rocket{position:absolute;top:-14px;transform:translateX(-50%);font-size:1.4rem;transition:left .4s;}
+  #screen-app2 .card{background:#161b45;border-radius:20px;padding:26px 20px;box-shadow:0 0 0 1px rgba(126,249,208,.15) inset;text-align:center;}
+  #screen-app2 .topic-tag{display:inline-block;background:rgba(126,249,208,.15);color:#7ef9d0;padding:4px 12px;border-radius:20px;font-size:.75rem;margin-bottom:12px;}
+  #screen-app2 .question{font-size:2rem;font-weight:bold;margin:8px 0 20px;}
+  #screen-app2 .answer-row{display:flex;justify-content:center;gap:10px;}
+  #screen-app2 input[type=text]{width:120px;font-size:1.5rem;text-align:center;padding:10px;border-radius:12px;border:2px solid #35407a;outline:none;background:#0e1240;color:#fff;}
+  #screen-app2 input[type=text]:focus{border-color:#7ef9d0;}
+  #screen-app2 button.submit{background:#7ef9d0;color:#062a22;border:none;border-radius:12px;padding:10px 22px;font-size:1.05rem;cursor:pointer;font-weight:bold;}
+  #screen-app2 .feedback{min-height:1.6rem;margin-top:12px;font-weight:bold;font-size:1rem;}
+  #screen-app2 .feedback.ok{color:#7ef9d0;}
+  #screen-app2 .feedback.bad{color:#ff5c66;}
+  #screen-app2 .combo{font-size:.82rem;color:#ffd166;min-height:1.2rem;margin-top:2px;}
+  #screen-app2 .gameover{display:none;text-align:center;}
+  #screen-app2 .gameover.active{display:block;}
+  #screen-app2 .gameover .big{font-size:2.4rem;margin-bottom:6px;}
+  #screen-app2 .gameover p{color:#c7cbee;}
+  #screen-app2 .restart-btn{margin-top:12px;background:#ff6fb0;color:#3a0620;border:none;border-radius:12px;padding:12px 24px;font-size:1rem;cursor:pointer;font-weight:bold;}
+  #screen-app2 .start-btn{margin-top:14px;background:#7ef9d0;color:#062a22;border:none;border-radius:14px;padding:14px 28px;font-size:1.15rem;cursor:pointer;font-weight:bold;box-shadow:0 0 20px rgba(126,249,208,.4);}
+  #screen-app2 .rules{font-size:.82rem;color:#b7bde0;margin-top:10px;line-height:1.5;}
+
+  /* ================= APP 3 (stories) ================= */
+  #screen-app3{
+    background:linear-gradient(180deg,#fbf3e3 0%, #f6e8cf 100%);
+    color:#3d405b;padding:16px 14px 60px;font-family:Georgia,'Trebuchet MS',serif;
+  }
+  #screen-app3 .topbar{display:flex;justify-content:space-between;align-items:center;max-width:600px;margin:0 auto 8px;font-family:'Trebuchet MS',sans-serif;}
+  #screen-app3 .wrap{max-width:600px;margin:0 auto;}
+  #screen-app3 h1{text-align:center;font-size:1.5rem;margin:4px 0 2px;}
+  #screen-app3 .subtitle{text-align:center;color:#6b6f8f;margin-bottom:18px;font-size:.88rem;font-family:'Trebuchet MS',sans-serif;}
+  #screen-app3 .book{background:#fffdf8;border-radius:18px;padding:24px 20px;box-shadow:0 6px 0 rgba(61,64,91,.08),0 0 0 1px rgba(61,64,91,.06);position:relative;}
+  #screen-app3 .page-num{position:absolute;top:12px;right:18px;font-size:.78rem;color:#a7abcb;font-family:'Trebuchet MS',sans-serif;}
+  #screen-app3 .character{font-size:2.3rem;text-align:center;margin-bottom:6px;}
+  #screen-app3 .badge{
+    display:block;text-align:center;font-family:'Trebuchet MS',sans-serif;font-size:.75rem;
+    color:#e0654a;font-weight:bold;margin-bottom:6px;
+  }
+  #screen-app3 .story-text{font-size:1.1rem;line-height:1.5;text-align:center;margin:0 0 16px;}
+  #screen-app3 .picture-box{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;background:#f6e8cf;border-radius:14px;padding:14px;margin-bottom:16px;font-size:1.7rem;}
+  #screen-app3 .group-label{font-family:'Trebuchet MS',sans-serif;font-size:.78rem;color:#6b6f8f;text-align:center;margin-top:-8px;margin-bottom:12px;}
+  #screen-app3 .question-line{font-family:'Trebuchet MS',sans-serif;font-weight:bold;font-size:1.05rem;text-align:center;margin-bottom:14px;color:#f2836b;}
+  #screen-app3 .answer-row{display:flex;justify-content:center;gap:10px;font-family:'Trebuchet MS',sans-serif;}
+  #screen-app3 input[type=text]{width:110px;font-size:1.5rem;text-align:center;padding:9px;border-radius:12px;border:2px solid #d8cdb0;outline:none;}
+  #screen-app3 input[type=text]:focus{border-color:#e9b44c;}
+  #screen-app3 button.submit{background:#84a98c;color:#fff;border:none;border-radius:12px;padding:10px 20px;font-size:1rem;cursor:pointer;font-family:'Trebuchet MS',sans-serif;box-shadow:0 3px 0 #5f7f68;}
+  #screen-app3 .feedback{font-family:'Trebuchet MS',sans-serif;text-align:center;font-weight:bold;min-height:1.6rem;margin-top:12px;font-size:1rem;}
+  #screen-app3 .feedback.ok{color:#84a98c;}
+  #screen-app3 .feedback.bad{color:#e15b5b;}
+  #screen-app3 .result{display:none;text-align:center;font-family:'Trebuchet MS',sans-serif;}
+  #screen-app3 .result.active{display:block;}
+  #screen-app3 .result .big{font-size:2.2rem;}
+  #screen-app3 .restart-btn{margin-top:10px;background:#f2836b;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-size:1rem;cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div class="screen active" id="screen-home">
+  <div class="wrap">
+    <h1>🧮 Математический тренажёр</h1>
+    <div class="subtitle">Выбери приложение и копи баллы в дневнике успехов!</div>
+
+    <div class="diary-card">
+      <div class="diary-top">
+        <div class="diary-emoji" id="rankEmoji">🌱</div>
+        <div>
+          <div class="diary-rank" id="rankTitle">Новичок</div>
+          <div class="diary-points" id="pointsTotal">0 баллов</div>
+        </div>
+      </div>
+      <div class="rank-bar"><div class="rank-bar-fill" id="rankBarFill"></div></div>
+      <div class="rank-next" id="rankNext"></div>
+    </div>
+
+    <div class="app-card a1" onclick="goToApp1()">
+      <div class="icon">🪜</div>
+      <div class="info">
+        <div class="title">Числовая лестница</div>
+        <div class="desc">От простого к сложному, по ступенькам</div>
+      </div>
+      <div class="pts" id="pointsApp1">0</div>
+    </div>
+
+    <div class="app-card a2" onclick="goToApp2()">
+      <div class="icon">🚀</div>
+      <div class="info">
+        <div class="title">Космическая гонка чисел</div>
+        <div class="desc">Игра на скорость и очки, темы вперемешку</div>
+      </div>
+      <div class="pts" id="pointsApp2">0</div>
+    </div>
+
+    <div class="app-card a3" onclick="goToApp3()">
+      <div class="icon">📖</div>
+      <div class="info">
+        <div class="title">Задачки-истории</div>
+        <div class="desc">Текстовые и картиночные задачи, сравнения</div>
+      </div>
+      <div class="pts" id="pointsApp3">0</div>
+    </div>
+
+    <button class="reset-link" onclick="resetDiary()">Сбросить весь прогресс</button>
+  </div>
+</div>
+
+<!-- ============ APP 1: LADDER ============ -->
+<div class="screen" id="screen-app1">
+  <div class="topbar">
+    <button class="home-btn" onclick="goHome()">🏠 На главную</button>
+  </div>
+  <h1>🪜 Числовая лестница</h1>
+  <div class="subtitle">Поднимайся по ступенькам — от лёгкого к сложному!</div>
+  <div class="wrap">
+    <div class="ladder" id="a1_ladder"></div>
+
+    <div class="quiz" id="a1_quiz">
+      <div class="quiz-top">
+        <button class="back-btn" onclick="a1_showLadder()">← к лестнице</button>
+        <div class="progress-dots" id="a1_dots"></div>
+      </div>
+      <div class="question" id="a1_questionText"></div>
+      <div class="answer-row">
+        <input type="text" id="a1_answerInput" inputmode="numeric" autocomplete="off">
+        <button class="submit" onclick="a1_checkAnswer()">Готово</button>
+      </div>
+      <div class="feedback" id="a1_feedback"></div>
+
+      <div class="result" id="a1_result">
+        <div class="big" id="a1_resultEmoji"></div>
+        <p id="a1_resultText"></p>
+        <div class="points-toast" id="a1_pointsToast"></div>
+        <button class="next-btn" id="a1_nextBtn" onclick="a1_goNextLevel()" style="display:none;">Следующая ступенька →</button>
+        <button class="retry-btn" onclick="a1_startLevel(a1_state.level)">Попробовать снова</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP 2: SPACE GAME ============ -->
+<div class="screen" id="screen-app2">
+  <div class="stars-bg"></div>
+  <div class="wrap">
+    <div class="topbar">
+      <button class="home-btn" onclick="goHome()">🏠 На главную</button>
+    </div>
+    <h1>🚀 Космическая гонка чисел</h1>
+    <div class="subtitle">Отвечай правильно — ракета летит к звезде!</div>
+
+    <div class="hud">
+      <div class="item"><div class="val" id="a2_scoreVal">0</div><div class="lbl">ОЧКИ</div></div>
+      <div class="item"><div class="val hearts" id="a2_heartsVal">❤️❤️❤️</div><div class="lbl">ЖИЗНИ</div></div>
+      <div class="item"><div class="val" id="a2_streakVal">0</div><div class="lbl">СЕРИЯ</div></div>
+    </div>
+
+    <div class="track">
+      <div class="track-fill" id="a2_trackFill"></div>
+      <div class="rocket" id="a2_rocket" style="left:0%;">🚀</div>
+    </div>
+
+    <div class="card" id="a2_startCard">
+      <div style="font-size:2.4rem;">🌌</div>
+      <p class="rules">Тебя ждут примеры на сложение, вычитание, умножение, деление и примеры в два действия — вперемешку.<br>
+      За правильный ответ — очки, за серию верных ответов — бонус!<br>
+      3 жизни. Долети до финиша!</p>
+      <button class="start-btn" onclick="a2_startGame()">Начать полёт</button>
+    </div>
+
+    <div class="card" id="a2_quizCard" style="display:none;">
+      <div class="topic-tag" id="a2_topicTag"></div>
+      <div class="question" id="a2_questionText"></div>
+      <div class="answer-row">
+        <input type="text" id="a2_answerInput" inputmode="numeric" autocomplete="off">
+        <button class="submit" onclick="a2_checkAnswer()">Пуск!</button>
+      </div>
+      <div class="feedback" id="a2_feedback"></div>
+      <div class="combo" id="a2_comboText"></div>
+    </div>
+
+    <div class="card gameover" id="a2_gameoverCard">
+      <div class="big" id="a2_goEmoji"></div>
+      <p id="a2_goText"></p>
+      <div class="points-toast" id="a2_pointsToast"></div>
+      <button class="restart-btn" onclick="a2_startGame()">Играть снова</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP 3: STORIES ============ -->
+<div class="screen" id="screen-app3">
+  <div class="topbar">
+    <button class="home-btn" onclick="goHome()">🏠 На главную</button>
+  </div>
+  <h1>📖 Задачки-истории</h1>
+  <div class="subtitle">Читай историю, сравнивай и считай картинки</div>
+  <div class="wrap">
+    <div class="book">
+      <div class="page-num" id="a3_pageNum"></div>
+      <div id="a3_problemArea"></div>
+
+      <div class="result" id="a3_result">
+        <div class="big">🎉</div>
+        <p id="a3_resultText"></p>
+        <div class="points-toast" id="a3_pointsToast"></div>
+        <button class="restart-btn" onclick="a3_init()">Начать заново</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =================================================================
+   ОБЩЕЕ: дневник успехов (хранится через window.storage)
+   ================================================================= */
+const STORAGE_KEY = 'math_hub_diary_v1';
+let diary = { total:0, app1:{points:0, stars:{}}, app2:{points:0,bestScore:0,gamesPlayed:0}, app3:{points:0,bestCorrect:0,runs:0} };
+
+async function loadDiary(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      diary = Object.assign(diary, parsed);
+    }
+  }catch(e){ console.error('Не удалось загрузить сохранённый прогресс:', e); }
+  renderHome();
+}
+async function saveDiary(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(diary)); }catch(e){ console.error('Не удалось сохранить прогресс:', e); }
+}
+function resetDiary(){
+  if(!confirm('Точно сбросить весь прогресс и баллы?')) return;
+  diary = { total:0, app1:{points:0, stars:{}}, app2:{points:0,bestScore:0,gamesPlayed:0}, app3:{points:0,bestCorrect:0,runs:0} };
+  saveDiary();
+  renderHome();
+}
+
+const RANKS = [
+  {min:0,   max:49,  emoji:'🌱', title:'Новичок'},
+  {min:50,  max:149, emoji:'📘', title:'Ученик'},
+  {min:150, max:299, emoji:'🧠', title:'Знаток'},
+  {min:300, max:499, emoji:'🏅', title:'Мастер чисел'},
+  {min:500, max:799, emoji:'🏆', title:'Гений математики'},
+  {min:800, max:999999, emoji:'👑', title:'Чемпион чисел'},
+];
+
+function renderHome(){
+  const total = diary.total || 0;
+  document.getElementById('pointsTotal').textContent = total + ' баллов';
+  document.getElementById('pointsApp1').textContent = (diary.app1.points||0) + ' б.';
+  document.getElementById('pointsApp2').textContent = (diary.app2.points||0) + ' б.';
+  document.getElementById('pointsApp3').textContent = (diary.app3.points||0) + ' б.';
+
+  let rank = RANKS[0];
+  for(const r of RANKS){ if(total>=r.min) rank=r; }
+  document.getElementById('rankEmoji').textContent = rank.emoji;
+  document.getElementById('rankTitle').textContent = rank.title;
+
+  const span = rank.max - rank.min + 1;
+  const pct = rank.max>=999999 ? 100 : Math.min(100, ((total-rank.min)/span)*100);
+  document.getElementById('rankBarFill').style.width = pct + '%';
+  document.getElementById('rankNext').textContent =
+    rank.max>=999999 ? 'Максимальный ранг!' : `До следующего ранга: ${rank.max+1-total} баллов`;
+}
+
+function goHome(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-home').classList.add('active');
+  renderHome();
+}
+function goToApp1(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-app1').classList.add('active');
+  a1_renderLadder();
+}
+function goToApp2(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-app2').classList.add('active');
+}
+function goToApp3(){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-app3').classList.add('active');
+  a3_init();
+}
+
+function rnd(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+/* общий генератор примеров в два действия, используют app1 и app2 */
+function genTwoStepOp(){
+  const forms = [
+    ()=>{const a=rnd(2,9),b=rnd(2,9),c=rnd(1,10); return {text:`(${a} + ${b}) − ${c} = ?`, answer:a+b-c};},
+    ()=>{const a=rnd(10,20),b=rnd(1,9),c=rnd(1,9); return {text:`(${a} − ${b}) + ${c} = ?`, answer:a-b+c};},
+    ()=>{const a=rnd(2,5),b=rnd(2,9),c=rnd(1,10); return {text:`${a} × ${b} + ${c} = ?`, answer:a*b+c};},
+    ()=>{const a=rnd(2,5),b=rnd(2,9); const maxc=a*b-1; const c=rnd(1,Math.max(1,maxc)); return {text:`${a} × ${b} − ${c} = ?`, answer:a*b-c};},
+  ];
+  return forms[rnd(0,forms.length-1)]();
+}
+
+/* =================================================================
+   APP 1: ЧИСЛОВАЯ ЛЕСТНИЦА
+   ================================================================= */
+function a1_genLevel1(){
+  const qs=[];
+  for(let i=0;i<8;i++){
+    if(Math.random()<0.5){ const a=rnd(1,15), b=rnd(1,20-a); qs.push({text:`${a} + ${b} = ?`, answer:a+b}); }
+    else { const a=rnd(10,20), b=rnd(1,a); qs.push({text:`${a} − ${b} = ?`, answer:a-b}); }
+  }
+  return qs;
+}
+function a1_genLevel2(){
+  const qs=[];
+  for(let i=0;i<8;i++){
+    const t=rnd(1,9)*10;
+    if(Math.random()<0.5){ const t2=rnd(1,(100-t)/10)*10; qs.push({text:`${t} + ${t2} = ?`, answer:t+t2}); }
+    else { const t2=rnd(0,t/10)*10; qs.push({text:`${t} − ${t2} = ?`, answer:t-t2}); }
+  }
+  return qs;
+}
+function a1_genLevel3(){
+  const qs=[];
+  for(let i=0;i<8;i++){
+    if(Math.random()<0.5){ const a=rnd(15,88), b=rnd(2,15); qs.push({text:`${a} + ${b} = ?`, answer:a+b}); }
+    else { const a=rnd(20,99), b=rnd(2,a-1); qs.push({text:`${a} − ${b} = ?`, answer:a-b}); }
+  }
+  return qs;
+}
+function a1_genLevel4(){
+  const qs=[];
+  for(let i=0;i<8;i++){ const a=rnd(2,5), b=rnd(2,9); qs.push({text:`${a} × ${b} = ?`, answer:a*b}); }
+  return qs;
+}
+function a1_genLevel5(){
+  const qs=[];
+  for(let i=0;i<8;i++){ const a=rnd(2,5), b=rnd(2,9), p=a*b; qs.push({text:`${p} ÷ ${a} = ?`, answer:b}); }
+  return qs;
+}
+function a1_genLevel6(){
+  const qs=[];
+  for(let i=0;i<8;i++){ qs.push(genTwoStepOp()); }
+  return qs;
+}
+function a1_genLevel7(){
+  const pool=[
+    ()=>a1_genLevel1()[0], ()=>a1_genLevel2()[0], ()=>a1_genLevel3()[0],
+    ()=>a1_genLevel4()[0], ()=>a1_genLevel5()[0], ()=>genTwoStepOp(),
+  ];
+  const qs=[];
+  for(let i=0;i<8;i++){ const f=pool[rnd(0,pool.length-1)]; qs.push(f()); }
+  return qs;
+}
+
+const A1_LEVELS = [
+  {title:"Сложение и вычитание до 20", desc:"Разминка для мозга", gen:a1_genLevel1, points:5},
+  {title:"Сложение и вычитание до 100 (круглые числа)", desc:"Десятки и сотни", gen:a1_genLevel2, points:6},
+  {title:"Сложение и вычитание до 100", desc:"С переходом через десяток", gen:a1_genLevel3, points:8},
+  {title:"Таблица умножения", desc:"2, 3, 4, 5", gen:a1_genLevel4, points:8},
+  {title:"Деление", desc:"Наоборот от умножения", gen:a1_genLevel5, points:8},
+  {title:"Примеры в два действия", desc:"Сначала одно, потом другое", gen:a1_genLevel6, points:12},
+  {title:"Экзамен: всё вместе", desc:"Проверь себя!", gen:a1_genLevel7, points:14},
+];
+const A1_QUESTIONS_PER_LEVEL = 8;
+const A1_PASS_THRESHOLD = 6;
+let a1_state = {level:0, questions:[], idx:0, results:[]};
+
+function a1_starsFor(level){ return (diary.app1.stars && diary.app1.stars[level]) || 0; }
+
+function a1_renderLadder(){
+  const el=document.getElementById('a1_ladder');
+  el.innerHTML='';
+  A1_LEVELS.forEach((lvl,i)=>{
+    const unlocked = i===0 || a1_starsFor(i-1)>0;
+    const div=document.createElement('div');
+    div.className='rung'+(unlocked?'':' locked');
+    div.onclick=()=>{ if(unlocked) a1_startLevel(i); };
+    div.innerHTML=`
+      <div class="num">${i+1}</div>
+      <div class="info">
+        <div class="title">${lvl.title}</div>
+        <div class="desc">${lvl.desc} · ${lvl.points} б. за пример</div>
+      </div>
+      <div class="stars">${'⭐'.repeat(a1_starsFor(i))}</div>
+    `;
+    el.appendChild(div);
+  });
+}
+function a1_showLadder(){
+  document.getElementById('a1_quiz').classList.remove('active');
+  a1_renderLadder();
+}
+function a1_startLevel(i){
+  a1_state.level=i;
+  a1_state.questions=A1_LEVELS[i].gen();
+  a1_state.idx=0;
+  a1_state.results=[];
+  document.getElementById('a1_quiz').classList.add('active');
+  document.getElementById('a1_result').classList.remove('active');
+  document.querySelector('#screen-app1 .answer-row').style.display='flex';
+  a1_renderDots();
+  a1_showQuestion();
+}
+function a1_renderDots(){
+  const d=document.getElementById('a1_dots'); d.innerHTML='';
+  for(let i=0;i<A1_QUESTIONS_PER_LEVEL;i++){
+    const s=document.createElement('div');
+    s.className='dot'+(a1_state.results[i]===true?' done-ok':a1_state.results[i]===false?' done-bad':'');
+    d.appendChild(s);
+  }
+}
+function a1_showQuestion(){
+  document.getElementById('a1_feedback').textContent='';
+  const q=a1_state.questions[a1_state.idx];
+  document.getElementById('a1_questionText').textContent=q.text;
+  const inp=document.getElementById('a1_answerInput');
+  inp.value=''; inp.focus();
+}
+document.getElementById('a1_answerInput').addEventListener('keydown',e=>{ if(e.key==='Enter') a1_checkAnswer(); });
+
+function a1_checkAnswer(){
+  const inp=document.getElementById('a1_answerInput');
+  const val=parseInt(inp.value,10);
+  if(isNaN(val)) return;
+  const q=a1_state.questions[a1_state.idx];
+  const fb=document.getElementById('a1_feedback');
+  if(val===q.answer){ fb.textContent='Верно! 🎉'; fb.className='feedback ok'; a1_state.results[a1_state.idx]=true; }
+  else { fb.textContent=`Не совсем. Ответ: ${q.answer}`; fb.className='feedback bad'; a1_state.results[a1_state.idx]=false; }
+  a1_renderDots();
+  setTimeout(()=>{
+    a1_state.idx++;
+    if(a1_state.idx<a1_state.questions.length) a1_showQuestion();
+    else a1_finishLevel();
+  },1100);
+}
+function a1_finishLevel(){
+  document.querySelector('#screen-app1 .answer-row').style.display='none';
+  document.getElementById('a1_feedback').textContent='';
+  document.getElementById('a1_questionText').textContent='';
+  const correct=a1_state.results.filter(r=>r).length;
+  const passed=correct>=A1_PASS_THRESHOLD;
+  const stars = correct===A1_QUESTIONS_PER_LEVEL?3:passed?2:correct>=4?1:0;
+  if(!diary.app1.stars) diary.app1.stars={};
+  if(stars>a1_starsFor(a1_state.level)) diary.app1.stars[a1_state.level]=stars;
+
+  const earned = correct * A1_LEVELS[a1_state.level].points;
+  diary.app1.points = (diary.app1.points||0) + earned;
+  diary.total = (diary.total||0) + earned;
+  saveDiary();
+
+  document.getElementById('a1_resultEmoji').textContent = passed?'🏆':'💪';
+  document.getElementById('a1_resultText').textContent =
+    `Правильно: ${correct} из ${A1_QUESTIONS_PER_LEVEL}. ` +
+    (passed ? 'Ступенька пройдена!' : `Нужно хотя бы ${A1_PASS_THRESHOLD}, чтобы пройти дальше. Попробуй ещё раз!`);
+  document.getElementById('a1_pointsToast').textContent = `+${earned} баллов в дневник успехов!`;
+  document.getElementById('a1_nextBtn').style.display =
+    (passed && a1_state.level<A1_LEVELS.length-1) ? 'inline-block' : 'none';
+  document.getElementById('a1_result').classList.add('active');
+}
+function a1_goNextLevel(){ a1_startLevel(a1_state.level+1); }
+
+/* =================================================================
+   APP 2: КОСМИЧЕСКАЯ ГОНКА ЧИСЕЛ
+   ================================================================= */
+const A2_FINISH_SCORE = 300;
+const A2_TOPICS = [
+  {name:"Сложение", points:10, gen:()=>{const a=rnd(1,60),b=rnd(1,99-a);return {text:`${a} + ${b} = ?`, answer:a+b};}},
+  {name:"Вычитание", points:10, gen:()=>{const a=rnd(10,99),b=rnd(1,a-1);return {text:`${a} − ${b} = ?`, answer:a-b};}},
+  {name:"Умножение", points:12, gen:()=>{const a=rnd(2,5),b=rnd(2,9);return {text:`${a} × ${b} = ?`, answer:a*b};}},
+  {name:"Деление", points:12, gen:()=>{const a=rnd(2,5),b=rnd(2,9);return {text:`${a*b} ÷ ${a} = ?`, answer:b};}},
+  {name:"Два действия", points:18, gen:()=>genTwoStepOp()},
+];
+let a2_score=0, a2_lives=3, a2_streak=0, a2_current=null, a2_currentTopic=null;
+
+function a2_startGame(){
+  a2_score=0; a2_lives=3; a2_streak=0;
+  document.getElementById('a2_startCard').style.display='none';
+  document.getElementById('a2_gameoverCard').classList.remove('active');
+  document.getElementById('a2_quizCard').style.display='block';
+  a2_updateHud();
+  a2_nextQuestion();
+}
+function a2_updateHud(){
+  document.getElementById('a2_scoreVal').textContent=a2_score;
+  document.getElementById('a2_heartsVal').textContent='❤️'.repeat(a2_lives)+'🖤'.repeat(3-a2_lives);
+  document.getElementById('a2_streakVal').textContent=a2_streak;
+  const pct=Math.min(100, (a2_score/A2_FINISH_SCORE)*100);
+  document.getElementById('a2_trackFill').style.width=pct+'%';
+  document.getElementById('a2_rocket').style.left=pct+'%';
+}
+function a2_nextQuestion(){
+  a2_currentTopic = A2_TOPICS[rnd(0,A2_TOPICS.length-1)];
+  a2_current = a2_currentTopic.gen();
+  document.getElementById('a2_topicTag').textContent = a2_currentTopic.name + ` (${a2_currentTopic.points} б.)`;
+  document.getElementById('a2_questionText').textContent=a2_current.text;
+  document.getElementById('a2_feedback').textContent='';
+  document.getElementById('a2_comboText').textContent='';
+  const inp=document.getElementById('a2_answerInput');
+  inp.value=''; inp.focus();
+}
+document.getElementById('a2_answerInput').addEventListener('keydown',e=>{ if(e.key==='Enter') a2_checkAnswer(); });
+
+function a2_checkAnswer(){
+  const inp=document.getElementById('a2_answerInput');
+  const val=parseInt(inp.value,10);
+  if(isNaN(val)) return;
+  const fb=document.getElementById('a2_feedback');
+  const combo=document.getElementById('a2_comboText');
+
+  if(val===a2_current.answer){
+    a2_streak++;
+    const bonus = a2_streak>=3 ? 5 : 0;
+    const gained = a2_currentTopic.points + bonus;
+    a2_score += gained;
+    fb.textContent=`Верно! +${gained} 🌟`;
+    fb.className='feedback ok';
+    combo.textContent = a2_streak>=3 ? `🔥 Серия: ${a2_streak}!` : '';
+  } else {
+    a2_streak=0; a2_lives--;
+    fb.textContent=`Мимо! Ответ был ${a2_current.answer}`;
+    fb.className='feedback bad';
+    combo.textContent='';
+  }
+  a2_updateHud();
+
+  setTimeout(()=>{
+    if(a2_lives<=0) a2_endGame(false);
+    else if(a2_score>=A2_FINISH_SCORE) a2_endGame(true);
+    else a2_nextQuestion();
+  },1000);
+}
+function a2_endGame(won){
+  document.getElementById('a2_quizCard').style.display='none';
+  document.getElementById('a2_gameoverCard').classList.add('active');
+  document.getElementById('a2_goEmoji').textContent = won ? '🏁🎉' : '💥';
+  document.getElementById('a2_goText').textContent = won
+    ? `Ура! Ракета долетела до финиша! Счёт: ${a2_score}`
+    : `Жизни закончились. Счёт: ${a2_score}. Попробуй ещё раз!`;
+
+  diary.app2.points = (diary.app2.points||0) + a2_score;
+  diary.app2.bestScore = Math.max(diary.app2.bestScore||0, a2_score);
+  diary.app2.gamesPlayed = (diary.app2.gamesPlayed||0) + 1;
+  diary.total = (diary.total||0) + a2_score;
+  saveDiary();
+  document.getElementById('a2_pointsToast').textContent = `+${a2_score} баллов в дневник успехов!`;
+}
+
+/* =================================================================
+   APP 3: ЗАДАЧКИ-ИСТОРИИ
+   ================================================================= */
+function emojiRow(emoji,count){ return Array(count).fill(emoji).join(''); }
+
+const A3_PROBLEMS = [
+  {type:'picture', char:'🐿️', points:10,
+    render:()=>`<div class="picture-box">${emojiRow('🌰',5)}</div><div class="group-label">Белка нашла ещё орешки</div><div class="picture-box">${emojiRow('🌰',3)}</div>`,
+    question:'Сколько всего орешков собрала белка?', answer:8},
+  {type:'text', char:'🚌', points:10,
+    text:'В автобусе ехало 24 пассажира. На остановке вышло 9 человек. Сколько пассажиров осталось в автобусе?',
+    question:'Сколько пассажиров осталось?', answer:15},
+  {type:'picture', char:'🐝', points:10,
+    render:()=>`<div class="picture-box">${Array(3).fill('<div>'+emojiRow('🌼',4)+'</div>').join('')}</div><div class="group-label">3 ряда по 4 цветка</div>`,
+    question:'Сколько всего цветков на клумбе?', answer:12},
+  {type:'text', char:'🍎', points:10,
+    text:'У Маши было 36 яблок. Она разложила их поровну в 4 корзины.',
+    question:'Сколько яблок в одной корзине?', answer:9},
+  {type:'text', char:'📚', points:10,
+    text:'На одной полке 18 книг, а на другой — на 7 книг меньше.',
+    question:'Сколько книг на второй полке?', answer:11},
+  {type:'picture', char:'🐧', points:10,
+    render:()=>`<div class="picture-box">${emojiRow('🐧',6)}</div><div class="group-label">К пингвинам приплыли ещё друзья</div><div class="picture-box">${emojiRow('🐧',7)}</div>`,
+    question:'Сколько пингвинов стало вместе?', answer:13},
+  {type:'text', char:'🎈', points:10,
+    text:'На празднике было 45 шариков. 18 шариков лопнули.',
+    question:'Сколько шариков осталось целыми?', answer:27},
+  {type:'picture', char:'🐟', points:10,
+    render:()=>`<div class="picture-box">${Array(5).fill('<div>'+emojiRow('🐟',3)+'</div>').join('')}</div><div class="group-label">5 аквариумов по 3 рыбки</div>`,
+    question:'Сколько всего рыбок?', answer:15},
+  {type:'text', char:'✏️', points:10,
+    text:'В коробке лежало 40 карандашей. Их разделили поровну между 5 детьми.',
+    question:'Сколько карандашей получил каждый ребёнок?', answer:8},
+  {type:'text', char:'🚗', points:10,
+    text:'Папа проехал на машине 27 км до города и ещё 15 км до дачи.',
+    question:'Сколько километров проехал папа всего?', answer:42},
+  {type:'picture', char:'🍪', points:10,
+    render:()=>`<div class="picture-box">${emojiRow('🍪',9)}</div><div class="group-label">Мама испекла печенье. Съели 4 штуки</div>`,
+    question:'Сколько печенья осталось?', answer:5},
+  {type:'text', char:'⚽', points:10,
+    text:'В школьном турнире 6 команд, в каждой по 7 игроков.',
+    question:'Сколько всего игроков участвует в турнире?', answer:42},
+
+  /* --- сравнение "на сколько больше/меньше" --- */
+  {type:'text', char:'🚙', points:12, badge:'🔍 Сравнение',
+    text:'У Пети 15 машинок, у Кости — 9.',
+    question:'На сколько машинок у Пети больше, чем у Кости?', answer:6},
+  {type:'text', char:'🍐', points:12, badge:'🔍 Сравнение',
+    text:'В корзине 24 груши и 17 яблок.',
+    question:'На сколько груш больше, чем яблок?', answer:7},
+  {type:'text', char:'🐕', points:12, badge:'🔍 Сравнение',
+    text:'Собака нашла 8 палок, а кошка принесла 14 палок.',
+    question:'На сколько палок кошка нашла больше, чем собака?', answer:6},
+  {type:'picture', char:'✨', points:12, badge:'🔍 Сравнение',
+    render:()=>`<div class="picture-box">${emojiRow('⭐',9)}</div><div class="group-label">а вот сколько лун на небе</div><div class="picture-box">${emojiRow('🌙',5)}</div>`,
+    question:'На сколько звёзд больше, чем лун?', answer:4},
+
+  /* --- задачи в два действия --- */
+  {type:'text', char:'🌳', points:15, badge:'⚡ 2 действия',
+    text:'В саду росло 14 яблонь и 9 груш. Садовник посадил ещё 6 яблонь.',
+    question:'Сколько всего деревьев стало в саду?', answer:29},
+  {type:'text', char:'💰', points:15, badge:'⚡ 2 действия',
+    text:'У Кати было 30 рублей. Она купила ручку за 12 рублей и тетрадь за 8 рублей.',
+    question:'Сколько рублей осталось у Кати?', answer:10},
+  {type:'text', char:'🚌', points:15, badge:'⚡ 2 действия',
+    text:'В автобусе ехало 18 пассажиров. На остановке вошло 7 человек, а вышло 5.',
+    question:'Сколько пассажиров стало в автобусе?', answer:20},
+  {type:'text', char:'🥐', points:15, badge:'⚡ 2 действия',
+    text:'Мама испекла 20 пирожков. Утром съели 6, а вечером ещё 5.',
+    question:'Сколько пирожков осталось?', answer:9},
+];
+
+let a3_order=[], a3_idx=0, a3_correctCount=0, a3_earnedPoints=0;
+
+function a3_shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+function a3_init(){
+  a3_order = a3_shuffle(A3_PROBLEMS.map((_,i)=>i)).slice(0,12);
+  a3_idx=0; a3_correctCount=0; a3_earnedPoints=0;
+  document.getElementById('a3_result').classList.remove('active');
+  document.getElementById('a3_problemArea').style.display='block';
+  a3_showProblem();
+}
+function a3_showProblem(){
+  const p = A3_PROBLEMS[a3_order[a3_idx]];
+  document.getElementById('a3_pageNum').textContent = `${a3_idx+1} / ${a3_order.length}`;
+  const area = document.getElementById('a3_problemArea');
+  let bodyHtml = p.type==='text' ? `<div class="story-text">${p.text}</div>` : p.render();
+  area.innerHTML = `
+    <div class="character">${p.char}</div>
+    ${p.badge ? `<div class="badge">${p.badge} · ${p.points} б.</div>` : ''}
+    ${bodyHtml}
+    <div class="question-line">${p.question}</div>
+    <div class="answer-row">
+      <input type="text" id="a3_answerInput" inputmode="numeric" autocomplete="off">
+      <button class="submit" onclick="a3_checkAnswer()">Ответить</button>
+    </div>
+    <div class="feedback" id="a3_feedback"></div>
+  `;
+  const inp=document.getElementById('a3_answerInput');
+  inp.focus();
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') a3_checkAnswer(); });
+}
+function a3_checkAnswer(){
+  const inp=document.getElementById('a3_answerInput');
+  const val=parseInt(inp.value,10);
+  if(isNaN(val)) return;
+  const p = A3_PROBLEMS[a3_order[a3_idx]];
+  const fb=document.getElementById('a3_feedback');
+  if(val===p.answer){
+    fb.textContent='Верно! Молодец 🎉'; fb.className='feedback ok';
+    a3_correctCount++; a3_earnedPoints += p.points;
+  } else {
+    fb.textContent=`Почти! Правильный ответ: ${p.answer}`; fb.className='feedback bad';
+  }
+  setTimeout(()=>{
+    a3_idx++;
+    if(a3_idx<a3_order.length) a3_showProblem();
+    else a3_finish();
+  },1300);
+}
+function a3_finish(){
+  document.getElementById('a3_problemArea').style.display='none';
+  document.getElementById('a3_pageNum').textContent='';
+  document.getElementById('a3_resultText').textContent =
+    `Решено верно: ${a3_correctCount} из ${a3_order.length}. Отличная работа!`;
+  document.getElementById('a3_pointsToast').textContent = `+${a3_earnedPoints} баллов в дневник успехов!`;
+  document.getElementById('a3_result').classList.add('active');
+
+  diary.app3.points = (diary.app3.points||0) + a3_earnedPoints;
+  diary.app3.bestCorrect = Math.max(diary.app3.bestCorrect||0, a3_correctCount);
+  diary.app3.runs = (diary.app3.runs||0) + 1;
+  diary.total = (diary.total||0) + a3_earnedPoints;
+  saveDiary();
+}
+
+/* =================================================================
+   СТАРТ
+   ================================================================= */
+loadDiary();
+a1_renderLadder();
+</script>
+</body>
+</html>
